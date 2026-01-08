@@ -3,145 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Gaming - Almacenamiento Local</title>
+    <title>CRM Gaming - Canal Único Compartido</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon-blue: #00f2ff; --neon-purple: #bc13fe; --dark-bg: #0d0d15; }
-        body { background-color: var(--dark-bg); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; }
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-purple: #bc13fe;
+            --dark-bg: #0d0d15;
+            --card-bg: #1a1a2e;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            background-image: radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.1) 0%, transparent 50%);
+        }
+
         .font-gaming { font-family: 'Orbitron', sans-serif; }
-        .neon-border { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
-        .phase-badge { padding: 4px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; width: 100%; cursor: pointer; border: none; outline: none; transition: all 0.2s; }
-        .status-espera { background: #374151; color: #d1d5db; }
-        .status-aceptado { background: #2563eb; color: white; box-shadow: 0 0 5px #2563eb; }
-        .status-rechazado { background: #dc2626; color: white; box-shadow: 0 0 5px #dc2626; }
-        
-        /* Pantalla de carga con LOGO 04.jpg */
-        #loading-overlay { 
-            background: #0d0d15; 
-            z-index: 1000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            position: fixed; 
-            inset: 0; 
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .loading-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-        .logo-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 24px;
+        .neon-border {
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
         }
 
-        .logo-img {
+        .gaming-card {
+            background: var(--card-bg);
+            border-left: 4px solid var(--neon-purple);
+        }
+
+        .phase-badge {
+            padding: 6px 4px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-align: center;
             width: 100%;
-            height: 100%;
-            object-fit: contain;
-            position: relative;
-            z-index: 10;
-            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+            cursor: pointer;
+            border: none;
+            outline: none;
         }
 
-        /* Efecto de brillo circular detrás del logo */
-        .logo-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 140%;
-            height: 140%;
-            background: radial-gradient(circle, rgba(0, 242, 255, 0.15) 0%, transparent 70%);
+        .status-espera { background: #374151; color: #d1d5db; }
+        .status-aceptado { background: #2563eb; color: white; box-shadow: 0 0 8px #2563eb; }
+        .status-rechazado { background: #dc2626; color: white; box-shadow: 0 0 8px #dc2626; }
+        
+        #loading-overlay {
+            background: rgba(13, 13, 21, 0.98);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-hidden { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+
+        @keyframes spin-once {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-refresh { animation: spin-once 0.6s ease-in-out; }
+        
+        .presence-badge {
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .presence-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--neon-blue);
             border-radius: 50%;
-            animation: pulse-glow 3s infinite ease-in-out;
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
-        }
-
-        @keyframes loading-bar {
-            0% { width: 0%; transform: translateX(-100%); }
-            50% { width: 100%; transform: translateX(0%); }
-            100% { width: 0%; transform: translateX(100%); }
+            box-shadow: 0 0 5px var(--neon-blue);
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 min-h-screen">
 
-    <!-- Pantalla de Carga Estética con Logo 04.jpg -->
-    <div id="loading-overlay">
+    <div id="loading-overlay" class="fixed inset-0">
         <div class="text-center">
-            <div class="logo-container">
-                <div class="logo-glow"></div>
-                <!-- Usando la imagen 04.jpg proporcionada -->
-                <img src="04.jpg" alt="Logo Gaming" class="logo-img" onerror="this.style.display='none'; document.getElementById('fallback-spinner').style.display='block';">
-                
-                <!-- Spinner de respaldo -->
-                <div id="fallback-spinner" class="hidden w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            </div>
-            <p class="font-gaming text-cyan-400 text-sm animate-pulse tracking-[0.3em] uppercase">Sincronizando Interfaz</p>
-            <div class="w-64 h-1 bg-gray-800 mx-auto mt-6 rounded-full overflow-hidden border border-cyan-900/30">
-                <div class="h-full bg-cyan-500 animate-[loading-bar_2s_ease-in-out_infinite]"></div>
-            </div>
+            <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-gaming text-cyan-400 animate-pulse text-xs">SINCRONIZANDO CANAL COMPARTIDO...</p>
         </div>
     </div>
 
-    <header class="max-w-7xl mx-auto mb-8 flex justify-between items-center border-b border-cyan-900 pb-4">
+    <header class="max-w-7xl mx-auto mb-8 flex justify-between items-end border-b border-cyan-900 pb-4">
         <div>
-            <h1 class="text-xl font-gaming text-cyan-400">GAMING CRM <span class="text-[10px] text-purple-500">[LOCAL MODE]</span></h1>
-            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Base de datos privada activa</p>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-gaming text-cyan-400 uppercase leading-none">CRM Gaming Co-op</h1>
+                <div id="presence-counter" class="presence-badge hidden">
+                    <span class="presence-dot animate-pulse"></span>
+                    <span id="online-count">0 Operadores Online</span>
+                </div>
+            </div>
+            <p class="text-[10px] text-purple-400 uppercase tracking-widest mt-1">Canal Global de Ventas</p>
         </div>
         <div class="text-right">
+            <div class="flex items-center gap-2 justify-end">
+                <div id="sync-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+                <span id="sync-status" class="text-[10px] text-gray-500 uppercase">Sin Red</span>
+            </div>
             <p id="clock" class="text-lg font-gaming text-white">00:00:00</p>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside class="lg:col-span-1">
-            <form id="client-form" class="neon-border p-4 bg-black/40 rounded-lg space-y-4">
-                <h2 class="font-gaming text-xs text-purple-400 uppercase mb-2 border-b border-purple-900/50 pb-2">Registrar Lead</h2>
-                <div>
-                    <label class="text-[9px] uppercase text-gray-500 mb-1 block">Nombre Contacto</label>
-                    <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400 transition-colors" placeholder="Ej: John Doe">
-                </div>
-                <div>
-                    <label class="text-[9px] uppercase text-gray-500 mb-1 block">Empresa / Proyecto</label>
-                    <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400 transition-colors" placeholder="Ej: Cyberpunk Devs">
-                </div>
-                <button type="submit" class="w-full py-3 bg-cyan-950 hover:bg-cyan-600 text-cyan-400 hover:text-white border border-cyan-500 font-gaming text-[10px] rounded transition-all uppercase tracking-widest">Añadir a Memoria</button>
-            </form>
-            
-            <div class="mt-4 p-3 border border-gray-800 rounded bg-black/40 text-[9px] text-gray-500 leading-relaxed">
-                <p>🔒 Los datos se almacenan localmente en tu navegador. <br> No se comparten con servidores externos.</p>
+            <div class="neon-border p-4 bg-black/40 rounded-lg">
+                <h2 class="font-gaming text-xs mb-4 text-purple-400 uppercase">Nuevo Lead</h2>
+                <form id="client-form" class="space-y-3">
+                    <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Nombre Contacto">
+                    <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Empresa">
+                    <input type="email" id="email" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Email">
+                    <input type="date" id="init_date" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none">
+                    <button type="submit" id="submit-btn" disabled class="w-full py-2 bg-gray-700 text-white font-gaming text-[10px] rounded uppercase opacity-50 cursor-not-allowed">
+                        Sincronizando...
+                    </button>
+                </form>
             </div>
         </aside>
 
         <section class="lg:col-span-3">
-            <div class="neon-border bg-black/60 rounded-lg overflow-hidden h-[600px] flex flex-col">
-                <div class="p-4 bg-slate-900/50 border-b border-cyan-900 flex items-center justify-between gap-4">
-                    <div class="flex-grow relative">
-                        <input type="text" id="search-input" placeholder="BUSCAR LEAD..." class="bg-black/40 border border-cyan-900 text-[10px] px-3 py-2 rounded w-full outline-none focus:border-cyan-400 tracking-widest">
+            <div class="neon-border bg-black/60 rounded-lg overflow-hidden flex flex-col h-[600px]">
+                <div class="p-3 bg-slate-900 border-b border-cyan-900 flex justify-between items-center gap-4">
+                    <input type="text" id="search-input" placeholder="BUSCAR POR NOMBRE O EMPRESA..." class="bg-black/40 border border-cyan-900 text-[10px] px-3 py-1 rounded flex-grow outline-none focus:border-cyan-400">
+                    
+                    <button id="refresh-btn" onclick="window.manualRefresh()" class="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-400 px-3 py-1 rounded text-[10px] font-gaming transition-all uppercase group">
+                        <svg id="refresh-icon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Refrescar</span>
+                    </button>
+
+                    <div class="text-[9px] text-cyan-600 font-mono flex gap-3 uppercase shrink-0">
+                        <span>Canal: GLOBAL_LIVE</span>
                     </div>
-                    <span id="counter" class="text-[10px] font-gaming text-cyan-500 whitespace-nowrap">DB SIZE: 0</span>
                 </div>
                 <div class="overflow-auto flex-grow">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0 z-10">
+                    <table class="w-full text-left text-sm min-w-[800px]">
+                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0 z-20">
                             <tr>
-                                <th class="p-4 border-b border-gray-800">Identidad</th>
-                                <th class="p-4 text-center border-b border-gray-800">Fase 1</th>
-                                <th class="p-4 text-center border-b border-gray-800">Fase 2</th>
-                                <th class="p-4 text-center border-b border-gray-800">Fase 3</th>
-                                <th class="p-4 border-b border-gray-800">Notas</th>
-                                <th class="p-4 text-right border-b border-gray-800">Acción</th>
+                                <th class="p-4">Identidad</th>
+                                <th class="p-4 text-center">Fase 1</th>
+                                <th class="p-4 text-center">Fase 2</th>
+                                <th class="p-4 text-center">Fase 3</th>
+                                <th class="p-4 text-center">Fase 4</th>
+                                <th class="p-4">Notas</th>
+                                <th class="p-4 text-right">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="client-list">
-                            <!-- Datos inyectados por JS -->
+                            <tr><td colspan="7" class="p-10 text-center text-gray-600 animate-pulse">ESPERANDO CONEXIÓN...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -149,102 +169,210 @@
         </section>
     </main>
 
-    <script>
-        let leads = JSON.parse(localStorage.getItem('crm_gaming_leads_v2')) || [];
+    <div id="toast" class="fixed bottom-4 right-4 translate-y-20 transition-all duration-300 bg-cyan-900 text-white p-3 rounded text-[10px] font-gaming uppercase z-50"></div>
 
-        // Inicialización
-        window.addEventListener('load', () => {
-            setTimeout(() => {
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, setDoc, deleteDoc as firestoreDeleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gaming_crm_shared_fixed';
+
+        let user = null;
+        let allLeads = [];
+        let searchTerm = "";
+        let unsubscribeLeads = null;
+        let unsubscribePresence = null;
+
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Fail:", err);
+                showToast("Fallo de conexión inicial");
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            if (u) {
+                user = u;
                 document.getElementById('loading-overlay').classList.add('loading-hidden');
-                renderLeads();
-            }, 1800); 
+                document.getElementById('sync-indicator').classList.replace('bg-red-500', 'bg-green-500');
+                document.getElementById('sync-status').innerText = "CONECTADO";
+                
+                const btn = document.getElementById('submit-btn');
+                btn.disabled = false;
+                btn.innerText = "NUEVO CONTACTO"; // Texto actualizado aquí
+                btn.classList.replace('bg-gray-700', 'bg-cyan-600');
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                startRealtimeSync();
+                setupPresence();
+            } else {
+                initAuth();
+            }
         });
 
-        // Reloj tiempo real
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-        }, 1000);
+        async function setupPresence() {
+            if (!user) return;
+            const presenceDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'presence', user.uid);
+            await setDoc(presenceDocRef, {
+                uid: user.uid,
+                lastActive: serverTimestamp()
+            });
+            window.addEventListener('beforeunload', () => {
+                firestoreDeleteDoc(presenceDocRef);
+            });
+            const presenceCol = collection(db, 'artifacts', appId, 'public', 'data', 'presence');
+            if (unsubscribePresence) unsubscribePresence();
+            unsubscribePresence = onSnapshot(presenceCol, (snap) => {
+                const count = snap.size;
+                const counterDiv = document.getElementById('presence-counter');
+                const countSpan = document.getElementById('online-count');
+                counterDiv.classList.remove('hidden');
+                countSpan.innerText = `${count} ${count === 1 ? 'Operador' : 'Operadores'} Online`;
+            }, (err) => console.error("Presence Error:", err));
+        }
 
-        function renderLeads() {
+        function startRealtimeSync() {
+            if (!user) return;
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
+            if (unsubscribeLeads) unsubscribeLeads();
+            unsubscribeLeads = onSnapshot(colRef, (snap) => {
+                allLeads = [];
+                snap.forEach(d => { allLeads.push({ id: d.id, ...d.data() }); });
+                render();
+            }, (err) => {
+                console.error("Sync Error:", err);
+                if (err.code === 'permission-denied') showToast("Error de permisos.");
+            });
+        }
+
+        window.manualRefresh = async () => {
+            if (!user) return;
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-refresh');
+            setTimeout(() => icon.classList.remove('animate-refresh'), 600);
+            showToast("Sincronizando datos...");
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
+                const querySnapshot = await getDocs(colRef);
+                allLeads = [];
+                querySnapshot.forEach(d => { allLeads.push({ id: d.id, ...d.data() }); });
+                render();
+                showToast("Actualizado");
+            } catch (err) {
+                showToast("Error al refrescar");
+            }
+        };
+
+        document.getElementById('client-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if (!user) return;
+            const data = {
+                contact_name: document.getElementById('contact_name').value,
+                company_name: document.getElementById('company_name').value,
+                email: document.getElementById('email').value,
+                init_date: document.getElementById('init_date').value,
+                f1: 'espera', f2: 'espera', f3: 'espera', f4: 'espera',
+                notes: '',
+                updatedAt: Date.now(),
+                creatorId: user.uid
+            };
+            try {
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
+                await addDoc(colRef, data);
+                e.target.reset();
+                showToast("Lead guardado");
+            } catch (err) {
+                showToast("Error al guardar");
+            }
+        };
+
+        window.updateField = async (id, field, val) => {
+            if (!user) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
+                await updateDoc(docRef, { [field]: val, updatedAt: Date.now() });
+            } catch (err) {
+                showToast("Error al actualizar");
+            }
+        };
+
+        window.deleteLead = async (id) => {
+            if (!user || !confirm("¿Eliminar este registro para todo el equipo?")) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
+                await firestoreDeleteDoc(docRef);
+                showToast("Eliminado");
+            } catch (err) {
+                showToast("Error al eliminar");
+            }
+        };
+
+        function render() {
             const list = document.getElementById('client-list');
-            const term = document.getElementById('search-input').value.toLowerCase();
-            const counter = document.getElementById('counter');
-            
-            const filtered = leads.filter(l => 
-                l.contact_name.toLowerCase().includes(term) || 
-                l.company_name.toLowerCase().includes(term)
-            ).sort((a,b) => b.createdAt - a.createdAt);
-
-            counter.innerText = `DB SIZE: ${filtered.length}`;
-
+            const filtered = allLeads.filter(l => 
+                (l.contact_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (l.company_name || "").toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            filtered.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
             if (filtered.length === 0) {
-                list.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-600 uppercase text-[10px] tracking-[0.3em]">Memoria Vacía / No Resultados</td></tr>';
+                list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 uppercase text-xs">Sin registros en este canal</td></tr>`;
                 return;
             }
-
             list.innerHTML = filtered.map(l => `
-                <tr class="border-b border-gray-800 hover:bg-cyan-500/5 transition-colors group">
+                <tr class="border-b border-gray-800 gaming-card hover:bg-white/5 transition-colors">
                     <td class="p-4">
-                        <div class="font-bold text-white text-xs uppercase tracking-tighter">${l.contact_name}</div>
-                        <div class="text-[9px] text-cyan-600 tracking-widest font-medium">${l.company_name}</div>
+                        <div class="font-bold text-white text-xs uppercase">${l.contact_name || 'N/A'}</div>
+                        <div class="text-[9px] text-cyan-500 font-mono">${l.company_name || 'N/A'}</div>
                     </td>
-                    ${['f1','f2','f3'].map(f => `
+                    ${['f1','f2','f3','f4'].map(f => `
                         <td class="p-4 text-center">
-                            <select onchange="updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
-                                <option value="espera" ${l[f]==='espera'?'selected':''}>⏳ ESPERA</option>
-                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>✅ VISTO</option>
-                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>❌ NULO</option>
+                            <select onchange="window.updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
+                                <option value="espera" ${l[f]==='espera'?'selected':''}>Espera</option>
+                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>OK</option>
+                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>NO</option>
                             </select>
                         </td>
                     `).join('')}
                     <td class="p-4">
-                        <input type="text" onblur="updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" 
-                        class="bg-transparent border-b border-gray-800 text-[10px] w-full outline-none focus:border-cyan-500 text-gray-400"
-                        placeholder="Añadir nota...">
+                        <input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" 
+                               class="bg-transparent text-[10px] w-full outline-none border-b border-transparent focus:border-cyan-500" placeholder="...">
                     </td>
                     <td class="p-4 text-right">
-                        <button onclick="deleteLead('${l.id}')" class="text-gray-700 hover:text-red-500 transition-colors font-bold text-xl px-2">×</button>
+                        <button onclick="window.deleteLead('${l.id}')" class="text-gray-600 hover:text-red-500">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        document.getElementById('client-form').onsubmit = (e) => {
-            e.preventDefault();
-            const newLead = {
-                id: Date.now().toString(),
-                contact_name: document.getElementById('contact_name').value,
-                company_name: document.getElementById('company_name').value,
-                f1: 'espera', f2: 'espera', f3: 'espera',
-                notes: '',
-                createdAt: Date.now()
-            };
-            leads.push(newLead);
-            saveAndRender();
-            e.target.reset();
+        document.getElementById('search-input').oninput = (e) => {
+            searchTerm = e.target.value;
+            render();
         };
 
-        window.updateField = (id, field, val) => {
-            const index = leads.findIndex(l => l.id === id);
-            if (index !== -1) {
-                leads[index][field] = val;
-                saveAndRender();
-            }
-        };
-
-        window.deleteLead = (id) => {
-            if (confirm("¿Eliminar este registro permanentemente?")) {
-                leads = leads.filter(l => l.id !== id);
-                saveAndRender();
-            }
-        };
-
-        function saveAndRender() {
-            localStorage.setItem('crm_gaming_leads_v2', JSON.stringify(leads));
-            renderLeads();
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            if(!t) return;
+            t.innerText = m;
+            t.classList.remove('translate-y-20');
+            setTimeout(() => t.classList.add('translate-y-20'), 3000);
         }
 
-        document.getElementById('search-input').oninput = renderLeads;
+        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+        initAuth();
     </script>
 </body>
 </html>
