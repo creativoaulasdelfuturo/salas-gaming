@@ -57,9 +57,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            transition: opacity 0.5s ease;
         }
 
-        .loading-hidden { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+        .loading-hidden { opacity: 0; pointer-events: none; visibility: hidden; }
 
         @keyframes spin-once {
             0% { transform: rotate(0deg); }
@@ -92,7 +93,7 @@
     <div id="loading-overlay" class="fixed inset-0">
         <div class="text-center">
             <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-gaming text-cyan-400 animate-pulse text-xs uppercase tracking-tighter">Iniciando Enlace de Datos...</p>
+            <p class="font-gaming text-cyan-400 animate-pulse text-xs uppercase tracking-tighter">Estableciendo enlace de datos...</p>
         </div>
     </div>
 
@@ -129,7 +130,6 @@
                         Sincronizando...
                     </button>
                 </form>
-                <p class="text-[9px] text-gray-500 mt-4 text-center italic">Cualquier cambio se refleja en todos los dispositivos conectados.</p>
             </div>
         </aside>
 
@@ -142,7 +142,7 @@
                         <svg id="refresh-icon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
-                        <span>Forzar Actualización</span>
+                        <span>Reconectar</span>
                     </button>
                 </div>
                 <div class="overflow-auto flex-grow">
@@ -159,7 +159,7 @@
                             </tr>
                         </thead>
                         <tbody id="client-list">
-                            <tr><td colspan="7" class="p-10 text-center text-gray-600 animate-pulse">CONECTANDO AL CANAL GLOBAL...</td></tr>
+                            <tr><td colspan="7" class="p-10 text-center text-gray-600 animate-pulse uppercase text-xs">Conectando al canal...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -174,13 +174,10 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, setDoc, deleteDoc as firestoreDeleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuración de Firebase
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // ID DE APP FIJO: Este ID vincula todos los archivos al mismo canal de datos sin importar dónde se guarden.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'shared-gaming-crm-production-v1';
 
         let user = null;
@@ -189,7 +186,15 @@
         let unsubscribeLeads = null;
         let unsubscribePresence = null;
 
-        // Gestión de Autenticación
+        // FUNCIÓN CLAVE: Oculta la pantalla de carga
+        const removeOverlay = () => {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.classList.add('loading-hidden');
+        };
+
+        // SEGURO DE CARGA: Si en 4 segundos no ha quitado la rueda, la quitamos nosotros.
+        setTimeout(removeOverlay, 4000);
+
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -198,16 +203,15 @@
                     await signInAnonymously(auth);
                 }
             } catch (err) {
-                console.error("Error Auth:", err);
-                showToast("Reintentando conexión...");
-                setTimeout(initAuth, 2000);
+                console.error("Auth Error:", err);
+                removeOverlay(); 
             }
         };
 
         onAuthStateChanged(auth, (u) => {
             if (u) {
                 user = u;
-                document.getElementById('loading-overlay').classList.add('loading-hidden');
+                removeOverlay(); // Quitar rueda al conectar
                 document.getElementById('sync-indicator').classList.replace('bg-red-500', 'bg-green-500');
                 document.getElementById('sync-status').innerText = "EN LÍNEA";
                 
@@ -224,88 +228,44 @@
             }
         });
 
-        // SISTEMA DE PRESENCIA ACTIVA
         async function setupPresence() {
             if (!user) return;
             const presenceDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'presence', user.uid);
-            
-            const markOnline = async () => {
-                await setDoc(presenceDocRef, {
-                    uid: user.uid,
-                    lastActive: serverTimestamp()
-                }, { merge: true });
-            };
-
-            await markOnline();
-            
-            // Si cerramos la ventana, eliminamos presencia
-            window.addEventListener('beforeunload', () => {
-                firestoreDeleteDoc(presenceDocRef);
-            });
-
-            // Escuchar cambios en la presencia de otros
+            await setDoc(presenceDocRef, { uid: user.uid, lastActive: serverTimestamp() }, { merge: true });
+            window.addEventListener('beforeunload', () => firestoreDeleteDoc(presenceDocRef));
             const presenceCol = collection(db, 'artifacts', appId, 'public', 'data', 'presence');
             if (unsubscribePresence) unsubscribePresence();
-            
             unsubscribePresence = onSnapshot(presenceCol, (snap) => {
                 const count = snap.size;
                 const counterDiv = document.getElementById('presence-counter');
                 const countSpan = document.getElementById('online-count');
                 counterDiv.classList.remove('hidden');
-                countSpan.innerText = `${count} ${count === 1 ? 'Operador' : 'Operadores'} Activos`;
-            }, (err) => console.error("Error Presencia:", err));
-        }
-
-        // SINCRONIZACIÓN EN TIEMPO REAL TOTAL
-        function startRealtimeSync() {
-            if (!user) return;
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
-            
-            if (unsubscribeLeads) unsubscribeLeads();
-
-            // Usamos onSnapshot que es el motor de "tiempo real"
-            unsubscribeLeads = onSnapshot(colRef, (snap) => {
-                allLeads = [];
-                snap.forEach(d => {
-                    allLeads.push({ id: d.id, ...d.data() });
-                });
-                render();
-                // Notificar visualmente que hubo un cambio externo si el usuario no estaba escribiendo
-                if (!document.activeElement.tagName === 'INPUT') {
-                   // render() ya actualiza la UI
-                }
-            }, (err) => {
-                console.error("Error de Sincronización:", err);
-                if (err.code === 'permission-denied') {
-                    showToast("Error de acceso. Refresca la página.");
-                }
+                countSpan.innerText = `${count} Operadores`;
             });
         }
 
-        // Forzar actualización manual (por si falla el socket)
-        window.manualRefresh = async () => {
+        function startRealtimeSync() {
             if (!user) return;
-            const icon = document.getElementById('refresh-icon');
-            icon.classList.add('animate-refresh');
-            setTimeout(() => icon.classList.remove('animate-refresh'), 600);
-            
-            try {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
-                const snap = await getDocs(colRef);
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
+            if (unsubscribeLeads) unsubscribeLeads();
+            unsubscribeLeads = onSnapshot(colRef, (snap) => {
                 allLeads = [];
                 snap.forEach(d => { allLeads.push({ id: d.id, ...d.data() }); });
                 render();
-                showToast("Datos Sincronizados");
-            } catch (err) {
-                showToast("Error al sincronizar");
-            }
+            });
+        }
+
+        window.manualRefresh = () => {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('animate-refresh');
+            setTimeout(() => icon.classList.remove('animate-refresh'), 600);
+            startRealtimeSync();
+            showToast("Sincronizando...");
         };
 
-        // Guardar nuevo contacto
         document.getElementById('client-form').onsubmit = async (e) => {
             e.preventDefault();
             if (!user) return;
-            
             const data = {
                 contact_name: document.getElementById('contact_name').value,
                 company_name: document.getElementById('company_name').value,
@@ -313,42 +273,28 @@
                 init_date: document.getElementById('init_date').value,
                 f1: 'espera', f2: 'espera', f3: 'espera', f4: 'espera',
                 notes: '',
-                updatedAt: Date.now(),
-                creatorId: user.uid
+                updatedAt: Date.now()
             };
-
             try {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
-                await addDoc(colRef, data);
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), data);
                 e.target.reset();
-                showToast("Contacto Guardado Globalmente");
-            } catch (err) {
-                showToast("Error al guardar");
-            }
+                showToast("Guardado");
+            } catch (err) { showToast("Error"); }
         };
 
-        // Actualizar campo (fase o nota) en tiempo real
         window.updateField = async (id, field, val) => {
             if (!user) return;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
                 await updateDoc(docRef, { [field]: val, updatedAt: Date.now() });
-                // El cambio se propagará a todos vía onSnapshot
-            } catch (err) {
-                showToast("Error en la edición");
-            }
+            } catch (err) { showToast("Error"); }
         };
 
-        // Eliminar para todos
         window.deleteLead = async (id) => {
-            if (!user || !confirm("¿Eliminar contacto para todo el equipo de forma permanente?")) return;
+            if (!user || !confirm("¿Borrar?")) return;
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
-                await firestoreDeleteDoc(docRef);
-                showToast("Contacto Eliminado");
-            } catch (err) {
-                showToast("Error al eliminar");
-            }
+                await firestoreDeleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'leads', id));
+            } catch (err) { showToast("Error"); }
         };
 
         function render() {
@@ -356,21 +302,18 @@
             const filtered = allLeads.filter(l => 
                 (l.contact_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (l.company_name || "").toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            
-            // Ordenar por fecha de actualización (los más nuevos primero)
-            filtered.sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            ).sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
             if (filtered.length === 0) {
-                list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 uppercase text-xs">Sin registros en el canal compartido</td></tr>`;
+                list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 uppercase text-[10px]">Sin registros</td></tr>`;
                 return;
             }
 
             list.innerHTML = filtered.map(l => `
                 <tr class="border-b border-gray-800 gaming-card hover:bg-white/5 transition-colors">
                     <td class="p-4">
-                        <div class="font-bold text-white text-xs uppercase">${l.contact_name || 'Sin Nombre'}</div>
-                        <div class="text-[9px] text-cyan-500 font-mono">${l.company_name || 'Sin Empresa'}</div>
+                        <div class="font-bold text-white text-xs uppercase">${l.contact_name || 'N/A'}</div>
+                        <div class="text-[9px] text-cyan-500">${l.company_name || 'N/A'}</div>
                     </td>
                     ${['f1','f2','f3','f4'].map(f => `
                         <td class="p-4 text-center">
@@ -381,34 +324,19 @@
                             </select>
                         </td>
                     `).join('')}
-                    <td class="p-4">
-                        <input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" 
-                               class="bg-transparent text-[10px] w-full outline-none border-b border-gray-800 focus:border-cyan-500" placeholder="Añadir nota...">
-                    </td>
-                    <td class="p-4 text-right">
-                        <button onclick="window.deleteLead('${l.id}')" class="text-gray-700 hover:text-red-500 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </td>
+                    <td class="p-4"><input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" class="bg-transparent text-[10px] w-full outline-none border-b border-gray-800 focus:border-cyan-500"></td>
+                    <td class="p-4 text-right"><button onclick="window.deleteLead('${l.id}')" class="text-gray-700 hover:text-red-500">×</button></td>
                 </tr>
             `).join('');
         }
 
-        document.getElementById('search-input').oninput = (e) => {
-            searchTerm = e.target.value;
-            render();
-        };
-
+        document.getElementById('search-input').oninput = (e) => { searchTerm = e.target.value; render(); };
         function showToast(m) {
             const t = document.getElementById('toast');
-            if(!t) return;
-            t.innerText = m;
-            t.classList.remove('translate-y-20');
+            t.innerText = m; t.classList.remove('translate-y-20');
             setTimeout(() => t.classList.add('translate-y-20'), 3000);
         }
-
         setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
         initAuth();
     </script>
 </body>
-</html>
