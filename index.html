@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Gaming - Base de Datos Compartida</title>
+    <title>CRM Gaming - Almacenamiento Local</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
@@ -11,56 +11,137 @@
         body { background-color: var(--dark-bg); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; }
         .font-gaming { font-family: 'Orbitron', sans-serif; }
         .neon-border { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
-        .phase-badge { padding: 4px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; width: 100%; cursor: pointer; border: none; }
+        .phase-badge { padding: 4px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; width: 100%; cursor: pointer; border: none; outline: none; transition: all 0.2s; }
         .status-espera { background: #374151; color: #d1d5db; }
-        .status-aceptado { background: #2563eb; color: white; }
-        .status-rechazado { background: #dc2626; color: white; }
-        #loading-overlay { background: #0d0d15; z-index: 1000; display: flex; justify-content: center; align-items: center; position: fixed; inset: 0; transition: opacity 0.5s; }
+        .status-aceptado { background: #2563eb; color: white; box-shadow: 0 0 5px #2563eb; }
+        .status-rechazado { background: #dc2626; color: white; box-shadow: 0 0 5px #dc2626; }
+        
+        /* Pantalla de carga con LOGO 04.jpg */
+        #loading-overlay { 
+            background: #0d0d15; 
+            z-index: 1000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: fixed; 
+            inset: 0; 
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         .loading-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .logo-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 24px;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: relative;
+            z-index: 10;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+        }
+
+        /* Efecto de brillo circular detrás del logo */
+        .logo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        @keyframes loading-bar {
+            0% { width: 0%; transform: translateX(-100%); }
+            50% { width: 100%; transform: translateX(0%); }
+            100% { width: 0%; transform: translateX(100%); }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- Pantalla de Carga Estética con Logo 04.jpg -->
     <div id="loading-overlay">
         <div class="text-center">
-            <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-gaming text-cyan-400 text-xs animate-pulse">CONECTANDO A LA RED GAMING...</p>
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <!-- Usando la imagen 04.jpg proporcionada -->
+                <img src="04.jpg" alt="Logo Gaming" class="logo-img" onerror="this.style.display='none'; document.getElementById('fallback-spinner').style.display='block';">
+                
+                <!-- Spinner de respaldo -->
+                <div id="fallback-spinner" class="hidden w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+            <p class="font-gaming text-cyan-400 text-sm animate-pulse tracking-[0.3em] uppercase">Sincronizando Interfaz</p>
+            <div class="w-64 h-1 bg-gray-800 mx-auto mt-6 rounded-full overflow-hidden border border-cyan-900/30">
+                <div class="h-full bg-cyan-500 animate-[loading-bar_2s_ease-in-out_infinite]"></div>
+            </div>
         </div>
     </div>
 
     <header class="max-w-7xl mx-auto mb-8 flex justify-between items-center border-b border-cyan-900 pb-4">
-        <h1 class="text-xl font-gaming text-cyan-400">CRM GAMING CO-OP</h1>
-        <div class="flex items-center gap-2">
-            <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
-            <span id="status-text" class="text-[10px] uppercase text-gray-500">Desconectado</span>
+        <div>
+            <h1 class="text-xl font-gaming text-cyan-400">GAMING CRM <span class="text-[10px] text-purple-500">[LOCAL MODE]</span></h1>
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Base de datos privada activa</p>
+        </div>
+        <div class="text-right">
+            <p id="clock" class="text-lg font-gaming text-white">00:00:00</p>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside class="lg:col-span-1">
-            <form id="client-form" class="neon-border p-4 bg-black/40 rounded-lg space-y-3">
-                <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400" placeholder="Nombre">
-                <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400" placeholder="Empresa">
-                <button type="submit" id="submit-btn" disabled class="w-full py-2 bg-gray-600 text-white font-gaming text-[10px] rounded opacity-50 cursor-not-allowed">CONECTANDO...</button>
+            <form id="client-form" class="neon-border p-4 bg-black/40 rounded-lg space-y-4">
+                <h2 class="font-gaming text-xs text-purple-400 uppercase mb-2 border-b border-purple-900/50 pb-2">Registrar Lead</h2>
+                <div>
+                    <label class="text-[9px] uppercase text-gray-500 mb-1 block">Nombre Contacto</label>
+                    <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400 transition-colors" placeholder="Ej: John Doe">
+                </div>
+                <div>
+                    <label class="text-[9px] uppercase text-gray-500 mb-1 block">Empresa / Proyecto</label>
+                    <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400 transition-colors" placeholder="Ej: Cyberpunk Devs">
+                </div>
+                <button type="submit" class="w-full py-3 bg-cyan-950 hover:bg-cyan-600 text-cyan-400 hover:text-white border border-cyan-500 font-gaming text-[10px] rounded transition-all uppercase tracking-widest">Añadir a Memoria</button>
             </form>
+            
+            <div class="mt-4 p-3 border border-gray-800 rounded bg-black/40 text-[9px] text-gray-500 leading-relaxed">
+                <p>🔒 Los datos se almacenan localmente en tu navegador. <br> No se comparten con servidores externos.</p>
+            </div>
         </aside>
 
         <section class="lg:col-span-3">
-            <div class="neon-border bg-black/60 rounded-lg overflow-hidden h-[500px] flex flex-col">
+            <div class="neon-border bg-black/60 rounded-lg overflow-hidden h-[600px] flex flex-col">
+                <div class="p-4 bg-slate-900/50 border-b border-cyan-900 flex items-center justify-between gap-4">
+                    <div class="flex-grow relative">
+                        <input type="text" id="search-input" placeholder="BUSCAR LEAD..." class="bg-black/40 border border-cyan-900 text-[10px] px-3 py-2 rounded w-full outline-none focus:border-cyan-400 tracking-widest">
+                    </div>
+                    <span id="counter" class="text-[10px] font-gaming text-cyan-500 whitespace-nowrap">DB SIZE: 0</span>
+                </div>
                 <div class="overflow-auto flex-grow">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0">
+                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0 z-10">
                             <tr>
-                                <th class="p-4">Identidad</th>
-                                <th class="p-4 text-center">Fase 1</th>
-                                <th class="p-4 text-center">Fase 2</th>
-                                <th class="p-4 text-center">Fase 3</th>
-                                <th class="p-4">Notas</th>
-                                <th class="p-4 text-right">Acción</th>
+                                <th class="p-4 border-b border-gray-800">Identidad</th>
+                                <th class="p-4 text-center border-b border-gray-800">Fase 1</th>
+                                <th class="p-4 text-center border-b border-gray-800">Fase 2</th>
+                                <th class="p-4 text-center border-b border-gray-800">Fase 3</th>
+                                <th class="p-4 border-b border-gray-800">Notas</th>
+                                <th class="p-4 text-right border-b border-gray-800">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="client-list">
-                            <tr><td colspan="6" class="p-10 text-center text-gray-600">ESPERANDO SINCRONIZACIÓN...</td></tr>
+                            <!-- Datos inyectados por JS -->
                         </tbody>
                     </table>
                 </div>
@@ -68,134 +149,102 @@
         </section>
     </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        let leads = JSON.parse(localStorage.getItem('crm_gaming_leads_v2')) || [];
 
-        // Inicialización de Firebase
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'crm-gaming-final-prod';
-
-        const overlay = document.getElementById('loading-overlay');
-        const list = document.getElementById('client-list');
-        const submitBtn = document.getElementById('submit-btn');
-
-        let user = null;
-
-        // Gestión de Autenticación (REGLA 3)
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Error de autenticación:", error);
-            }
-        };
-
-        initAuth();
-
-        onAuthStateChanged(auth, (u) => {
-            if (u) {
-                user = u;
-                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-500";
-                document.getElementById('status-text').innerText = "CONECTADO AL CANAL";
-                submitBtn.disabled = false;
-                submitBtn.innerText = "AÑADIR A LA RED";
-                submitBtn.className = "w-full py-2 bg-cyan-600 text-white font-gaming text-[10px] rounded hover:bg-cyan-500 transition-colors";
-                overlay.classList.add('loading-hidden');
-                
-                // Escucha en tiempo real con ruta corregida (REGLA 1)
-                const leadsRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
-                onSnapshot(leadsRef, (snap) => {
-                    const leads = [];
-                    snap.forEach(d => leads.push({ id: d.id, ...d.data() }));
-                    render(leads);
-                }, (error) => {
-                    console.error("Error en snapshot:", error);
-                });
-            }
+        // Inicialización
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('loading-hidden');
+                renderLeads();
+            }, 1800); 
         });
 
-        async function render(leads) {
-            // Ordenar en memoria (REGLA 2)
-            leads.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+        // Reloj tiempo real
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        function renderLeads() {
+            const list = document.getElementById('client-list');
+            const term = document.getElementById('search-input').value.toLowerCase();
+            const counter = document.getElementById('counter');
             
-            if (leads.length === 0) {
-                list.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-500 uppercase text-xs">No hay contactos en la red</td></tr>';
+            const filtered = leads.filter(l => 
+                l.contact_name.toLowerCase().includes(term) || 
+                l.company_name.toLowerCase().includes(term)
+            ).sort((a,b) => b.createdAt - a.createdAt);
+
+            counter.innerText = `DB SIZE: ${filtered.length}`;
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-600 uppercase text-[10px] tracking-[0.3em]">Memoria Vacía / No Resultados</td></tr>';
                 return;
             }
 
-            list.innerHTML = leads.map(l => `
-                <tr class="border-b border-gray-800 hover:bg-white/5 transition-colors">
-                    <td class="p-4 text-xs"><b>${l.contact_name || 'Sin nombre'}</b><br><span class="text-cyan-600">${l.company_name || 'Sin empresa'}</span></td>
+            list.innerHTML = filtered.map(l => `
+                <tr class="border-b border-gray-800 hover:bg-cyan-500/5 transition-colors group">
+                    <td class="p-4">
+                        <div class="font-bold text-white text-xs uppercase tracking-tighter">${l.contact_name}</div>
+                        <div class="text-[9px] text-cyan-600 tracking-widest font-medium">${l.company_name}</div>
+                    </td>
                     ${['f1','f2','f3'].map(f => `
                         <td class="p-4 text-center">
-                            <select onchange="window.updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
-                                <option value="espera" ${l[f]==='espera'?'selected':''}>⏳</option>
-                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>✅</option>
-                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>❌</option>
+                            <select onchange="updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
+                                <option value="espera" ${l[f]==='espera'?'selected':''}>⏳ ESPERA</option>
+                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>✅ VISTO</option>
+                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>❌ NULO</option>
                             </select>
                         </td>
                     `).join('')}
-                    <td class="p-4"><input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" class="bg-transparent border-b border-gray-800 text-[10px] w-full outline-none focus:border-cyan-500"></td>
-                    <td class="p-4 text-right"><button onclick="window.deleteLead('${l.id}')" class="text-red-900 hover:text-red-500 font-bold transition-colors">BORRAR</button></td>
+                    <td class="p-4">
+                        <input type="text" onblur="updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" 
+                        class="bg-transparent border-b border-gray-800 text-[10px] w-full outline-none focus:border-cyan-500 text-gray-400"
+                        placeholder="Añadir nota...">
+                    </td>
+                    <td class="p-4 text-right">
+                        <button onclick="deleteLead('${l.id}')" class="text-gray-700 hover:text-red-500 transition-colors font-bold text-xl px-2">×</button>
+                    </td>
                 </tr>
             `).join('');
         }
 
-        document.getElementById('client-form').onsubmit = async (e) => {
+        document.getElementById('client-form').onsubmit = (e) => {
             e.preventDefault();
-            if (!user) return;
-            
-            const data = {
+            const newLead = {
+                id: Date.now().toString(),
                 contact_name: document.getElementById('contact_name').value,
                 company_name: document.getElementById('company_name').value,
                 f1: 'espera', f2: 'espera', f3: 'espera',
                 notes: '',
                 createdAt: Date.now()
             };
-            
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), data);
-                e.target.reset();
-            } catch (error) {
-                console.error("Error al añadir documento:", error);
+            leads.push(newLead);
+            saveAndRender();
+            e.target.reset();
+        };
+
+        window.updateField = (id, field, val) => {
+            const index = leads.findIndex(l => l.id === id);
+            if (index !== -1) {
+                leads[index][field] = val;
+                saveAndRender();
             }
         };
 
-        window.updateField = async (id, field, val) => {
-            if (!user) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
-                await updateDoc(docRef, { [field]: val });
-            } catch (error) {
-                console.error("Error al actualizar:", error);
+        window.deleteLead = (id) => {
+            if (confirm("¿Eliminar este registro permanentemente?")) {
+                leads = leads.filter(l => l.id !== id);
+                saveAndRender();
             }
         };
 
-        window.deleteLead = async (id) => {
-            if (!user) return;
-            if (confirm("¿Borrar para todos?")) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'leads', id));
-                } catch (error) {
-                    console.error("Error al borrar:", error);
-                }
-            }
-        };
+        function saveAndRender() {
+            localStorage.setItem('crm_gaming_leads_v2', JSON.stringify(leads));
+            renderLeads();
+        }
 
-        // Fallback de carga por si la conexión falla
-        setTimeout(() => {
-            if (overlay) overlay.classList.add('loading-hidden');
-        }, 5000);
-
+        document.getElementById('search-input').oninput = renderLeads;
     </script>
 </body>
 </html>
