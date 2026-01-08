@@ -3,163 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM Gaming - Canal Único Compartido</title>
+    <title>CRM Gaming - Base de Datos Compartida</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --neon-blue: #00f2ff;
-            --neon-purple: #bc13fe;
-            --dark-bg: #0d0d15;
-            --card-bg: #1a1a2e;
-        }
-
-        body {
-            background-color: var(--dark-bg);
-            color: #e0e0e0;
-            font-family: 'Rajdhani', sans-serif;
-            background-image: radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.1) 0%, transparent 50%);
-        }
-
+        :root { --neon-blue: #00f2ff; --neon-purple: #bc13fe; --dark-bg: #0d0d15; }
+        body { background-color: var(--dark-bg); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; }
         .font-gaming { font-family: 'Orbitron', sans-serif; }
-
-        .neon-border {
-            border: 1px solid var(--neon-blue);
-            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
-        }
-
-        .gaming-card {
-            background: var(--card-bg);
-            border-left: 4px solid var(--neon-purple);
-        }
-
-        .phase-badge {
-            padding: 6px 4px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            font-weight: bold;
-            text-align: center;
-            width: 100%;
-            cursor: pointer;
-            border: none;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
+        .neon-border { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); }
+        .phase-badge { padding: 4px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; width: 100%; cursor: pointer; border: none; }
         .status-espera { background: #374151; color: #d1d5db; }
-        .status-aceptado { background: #2563eb; color: white; box-shadow: 0 0 8px #2563eb; }
-        .status-rechazado { background: #dc2626; color: white; box-shadow: 0 0 8px #dc2626; }
-        
-        #loading-overlay {
-            background: rgba(13, 13, 21, 0.98);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-hidden { opacity: 0; pointer-events: none; visibility: hidden; }
-
-        @keyframes spin-once {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .animate-refresh { animation: spin-once 0.6s ease-in-out; }
-        
-        .presence-badge {
-            background: rgba(0, 242, 255, 0.1);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .presence-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--neon-blue);
-            border-radius: 50%;
-            box-shadow: 0 0 5px var(--neon-blue);
-        }
+        .status-aceptado { background: #2563eb; color: white; }
+        .status-rechazado { background: #dc2626; color: white; }
+        #loading-overlay { background: #0d0d15; z-index: 1000; display: flex; justify-content: center; align-items: center; position: fixed; inset: 0; transition: opacity 0.5s; }
+        .loading-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
+<body class="p-4 md:p-8">
 
-    <div id="loading-overlay" class="fixed inset-0">
+    <div id="loading-overlay">
         <div class="text-center">
-            <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-gaming text-cyan-400 animate-pulse text-xs uppercase tracking-tighter">Estableciendo enlace de datos...</p>
+            <div class="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-gaming text-cyan-400 text-xs animate-pulse">CONECTANDO A LA RED GAMING...</p>
         </div>
     </div>
 
-    <header class="max-w-7xl mx-auto mb-8 flex justify-between items-end border-b border-cyan-900 pb-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <h1 class="text-2xl font-gaming text-cyan-400 uppercase leading-none">CRM Gaming Co-op</h1>
-                <div id="presence-counter" class="presence-badge hidden">
-                    <span class="presence-dot animate-pulse"></span>
-                    <span id="online-count">Buscando Operadores...</span>
-                </div>
-            </div>
-            <p class="text-[10px] text-purple-400 uppercase tracking-widest mt-1">Canal de Datos en Tiempo Real</p>
-        </div>
-        <div class="text-right">
-            <div class="flex items-center gap-2 justify-end">
-                <div id="sync-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
-                <span id="sync-status" class="text-[10px] text-gray-500 uppercase">Sin Red</span>
-            </div>
-            <p id="clock" class="text-lg font-gaming text-white">00:00:00</p>
+    <header class="max-w-7xl mx-auto mb-8 flex justify-between items-center border-b border-cyan-900 pb-4">
+        <h1 class="text-xl font-gaming text-cyan-400">CRM GAMING CO-OP</h1>
+        <div class="flex items-center gap-2">
+            <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+            <span id="status-text" class="text-[10px] uppercase text-gray-500">Desconectado</span>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside class="lg:col-span-1">
-            <div class="neon-border p-4 bg-black/40 rounded-lg">
-                <h2 class="font-gaming text-xs mb-4 text-purple-400 uppercase">Nuevo Lead</h2>
-                <form id="client-form" class="space-y-3">
-                    <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Nombre Contacto">
-                    <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Empresa">
-                    <input type="email" id="email" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none" placeholder="Email">
-                    <input type="date" id="init_date" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 focus:border-cyan-400 outline-none">
-                    <button type="submit" id="submit-btn" disabled class="w-full py-2 bg-gray-700 text-white font-gaming text-[10px] rounded uppercase opacity-50 cursor-not-allowed">
-                        Sincronizando...
-                    </button>
-                </form>
-            </div>
+            <form id="client-form" class="neon-border p-4 bg-black/40 rounded-lg space-y-3">
+                <input type="text" id="contact_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400" placeholder="Nombre">
+                <input type="text" id="company_name" required class="w-full p-2 rounded text-sm bg-white/5 border border-cyan-900 outline-none focus:border-cyan-400" placeholder="Empresa">
+                <button type="submit" id="submit-btn" disabled class="w-full py-2 bg-gray-600 text-white font-gaming text-[10px] rounded opacity-50 cursor-not-allowed">CONECTANDO...</button>
+            </form>
         </aside>
 
         <section class="lg:col-span-3">
-            <div class="neon-border bg-black/60 rounded-lg overflow-hidden flex flex-col h-[600px]">
-                <div class="p-3 bg-slate-900 border-b border-cyan-900 flex justify-between items-center gap-4">
-                    <input type="text" id="search-input" placeholder="BUSCAR POR NOMBRE O EMPRESA..." class="bg-black/40 border border-cyan-900 text-[10px] px-3 py-1 rounded flex-grow outline-none focus:border-cyan-400">
-                    
-                    <button id="refresh-btn" onclick="window.manualRefresh()" class="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-400 px-3 py-1 rounded text-[10px] font-gaming transition-all uppercase group">
-                        <svg id="refresh-icon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        <span>Reconectar</span>
-                    </button>
-                </div>
+            <div class="neon-border bg-black/60 rounded-lg overflow-hidden h-[500px] flex flex-col">
                 <div class="overflow-auto flex-grow">
-                    <table class="w-full text-left text-sm min-w-[800px]">
-                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0 z-20">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-black text-[9px] text-gray-500 uppercase sticky top-0">
                             <tr>
                                 <th class="p-4">Identidad</th>
                                 <th class="p-4 text-center">Fase 1</th>
                                 <th class="p-4 text-center">Fase 2</th>
                                 <th class="p-4 text-center">Fase 3</th>
-                                <th class="p-4 text-center">Fase 4</th>
-                                <th class="p-4">Notas Rápidas</th>
-                                <th class="p-4 text-right">Borrar</th>
+                                <th class="p-4">Notas</th>
+                                <th class="p-4 text-right">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="client-list">
-                            <tr><td colspan="7" class="p-10 text-center text-gray-600 animate-pulse uppercase text-xs">Conectando al canal...</td></tr>
+                            <tr><td colspan="6" class="p-10 text-center text-gray-600">ESPERANDO SINCRONIZACIÓN...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -167,34 +68,25 @@
         </section>
     </main>
 
-    <div id="toast" class="fixed bottom-4 right-4 translate-y-20 transition-all duration-300 bg-cyan-900 text-white p-3 rounded text-[10px] font-gaming uppercase z-50"></div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, setDoc, deleteDoc as firestoreDeleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Inicialización de Firebase
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'shared-gaming-crm-production-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'crm-gaming-final-prod';
+
+        const overlay = document.getElementById('loading-overlay');
+        const list = document.getElementById('client-list');
+        const submitBtn = document.getElementById('submit-btn');
 
         let user = null;
-        let allLeads = [];
-        let searchTerm = "";
-        let unsubscribeLeads = null;
-        let unsubscribePresence = null;
 
-        // FUNCIÓN CLAVE: Oculta la pantalla de carga
-        const removeOverlay = () => {
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) overlay.classList.add('loading-hidden');
-        };
-
-        // SEGURO DE CARGA: Si en 4 segundos no ha quitado la rueda, la quitamos nosotros.
-        setTimeout(removeOverlay, 4000);
-
+        // Gestión de Autenticación (REGLA 3)
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -202,141 +94,108 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (err) {
-                console.error("Auth Error:", err);
-                removeOverlay(); 
+            } catch (error) {
+                console.error("Error de autenticación:", error);
             }
         };
+
+        initAuth();
 
         onAuthStateChanged(auth, (u) => {
             if (u) {
                 user = u;
-                removeOverlay(); // Quitar rueda al conectar
-                document.getElementById('sync-indicator').classList.replace('bg-red-500', 'bg-green-500');
-                document.getElementById('sync-status').innerText = "EN LÍNEA";
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-500";
+                document.getElementById('status-text').innerText = "CONECTADO AL CANAL";
+                submitBtn.disabled = false;
+                submitBtn.innerText = "AÑADIR A LA RED";
+                submitBtn.className = "w-full py-2 bg-cyan-600 text-white font-gaming text-[10px] rounded hover:bg-cyan-500 transition-colors";
+                overlay.classList.add('loading-hidden');
                 
-                const btn = document.getElementById('submit-btn');
-                btn.disabled = false;
-                btn.innerText = "NUEVO CONTACTO";
-                btn.classList.replace('bg-gray-700', 'bg-cyan-600');
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-
-                startRealtimeSync();
-                setupPresence();
-            } else {
-                initAuth();
+                // Escucha en tiempo real con ruta corregida (REGLA 1)
+                const leadsRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
+                onSnapshot(leadsRef, (snap) => {
+                    const leads = [];
+                    snap.forEach(d => leads.push({ id: d.id, ...d.data() }));
+                    render(leads);
+                }, (error) => {
+                    console.error("Error en snapshot:", error);
+                });
             }
         });
 
-        async function setupPresence() {
-            if (!user) return;
-            const presenceDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'presence', user.uid);
-            await setDoc(presenceDocRef, { uid: user.uid, lastActive: serverTimestamp() }, { merge: true });
-            window.addEventListener('beforeunload', () => firestoreDeleteDoc(presenceDocRef));
-            const presenceCol = collection(db, 'artifacts', appId, 'public', 'data', 'presence');
-            if (unsubscribePresence) unsubscribePresence();
-            unsubscribePresence = onSnapshot(presenceCol, (snap) => {
-                const count = snap.size;
-                const counterDiv = document.getElementById('presence-counter');
-                const countSpan = document.getElementById('online-count');
-                counterDiv.classList.remove('hidden');
-                countSpan.innerText = `${count} Operadores`;
-            });
-        }
+        async function render(leads) {
+            // Ordenar en memoria (REGLA 2)
+            leads.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+            
+            if (leads.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" class="p-10 text-center text-gray-500 uppercase text-xs">No hay contactos en la red</td></tr>';
+                return;
+            }
 
-        function startRealtimeSync() {
-            if (!user) return;
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leads');
-            if (unsubscribeLeads) unsubscribeLeads();
-            unsubscribeLeads = onSnapshot(colRef, (snap) => {
-                allLeads = [];
-                snap.forEach(d => { allLeads.push({ id: d.id, ...d.data() }); });
-                render();
-            });
+            list.innerHTML = leads.map(l => `
+                <tr class="border-b border-gray-800 hover:bg-white/5 transition-colors">
+                    <td class="p-4 text-xs"><b>${l.contact_name || 'Sin nombre'}</b><br><span class="text-cyan-600">${l.company_name || 'Sin empresa'}</span></td>
+                    ${['f1','f2','f3'].map(f => `
+                        <td class="p-4 text-center">
+                            <select onchange="window.updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
+                                <option value="espera" ${l[f]==='espera'?'selected':''}>⏳</option>
+                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>✅</option>
+                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>❌</option>
+                            </select>
+                        </td>
+                    `).join('')}
+                    <td class="p-4"><input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" class="bg-transparent border-b border-gray-800 text-[10px] w-full outline-none focus:border-cyan-500"></td>
+                    <td class="p-4 text-right"><button onclick="window.deleteLead('${l.id}')" class="text-red-900 hover:text-red-500 font-bold transition-colors">BORRAR</button></td>
+                </tr>
+            `).join('');
         }
-
-        window.manualRefresh = () => {
-            const icon = document.getElementById('refresh-icon');
-            icon.classList.add('animate-refresh');
-            setTimeout(() => icon.classList.remove('animate-refresh'), 600);
-            startRealtimeSync();
-            showToast("Sincronizando...");
-        };
 
         document.getElementById('client-form').onsubmit = async (e) => {
             e.preventDefault();
             if (!user) return;
+            
             const data = {
                 contact_name: document.getElementById('contact_name').value,
                 company_name: document.getElementById('company_name').value,
-                email: document.getElementById('email').value,
-                init_date: document.getElementById('init_date').value,
-                f1: 'espera', f2: 'espera', f3: 'espera', f4: 'espera',
+                f1: 'espera', f2: 'espera', f3: 'espera',
                 notes: '',
-                updatedAt: Date.now()
+                createdAt: Date.now()
             };
+            
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leads'), data);
                 e.target.reset();
-                showToast("Guardado");
-            } catch (err) { showToast("Error"); }
+            } catch (error) {
+                console.error("Error al añadir documento:", error);
+            }
         };
 
         window.updateField = async (id, field, val) => {
             if (!user) return;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leads', id);
-                await updateDoc(docRef, { [field]: val, updatedAt: Date.now() });
-            } catch (err) { showToast("Error"); }
+                await updateDoc(docRef, { [field]: val });
+            } catch (error) {
+                console.error("Error al actualizar:", error);
+            }
         };
 
         window.deleteLead = async (id) => {
-            if (!user || !confirm("¿Borrar?")) return;
-            try {
-                await firestoreDeleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'leads', id));
-            } catch (err) { showToast("Error"); }
+            if (!user) return;
+            if (confirm("¿Borrar para todos?")) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'leads', id));
+                } catch (error) {
+                    console.error("Error al borrar:", error);
+                }
+            }
         };
 
-        function render() {
-            const list = document.getElementById('client-list');
-            const filtered = allLeads.filter(l => 
-                (l.contact_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (l.company_name || "").toLowerCase().includes(searchTerm.toLowerCase())
-            ).sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        // Fallback de carga por si la conexión falla
+        setTimeout(() => {
+            if (overlay) overlay.classList.add('loading-hidden');
+        }, 5000);
 
-            if (filtered.length === 0) {
-                list.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 uppercase text-[10px]">Sin registros</td></tr>`;
-                return;
-            }
-
-            list.innerHTML = filtered.map(l => `
-                <tr class="border-b border-gray-800 gaming-card hover:bg-white/5 transition-colors">
-                    <td class="p-4">
-                        <div class="font-bold text-white text-xs uppercase">${l.contact_name || 'N/A'}</div>
-                        <div class="text-[9px] text-cyan-500">${l.company_name || 'N/A'}</div>
-                    </td>
-                    ${['f1','f2','f3','f4'].map(f => `
-                        <td class="p-4 text-center">
-                            <select onchange="window.updateField('${l.id}', '${f}', this.value)" class="phase-badge status-${l[f] || 'espera'}">
-                                <option value="espera" ${l[f]==='espera'?'selected':''}>Espera</option>
-                                <option value="aceptado" ${l[f]==='aceptado'?'selected':''}>Visto</option>
-                                <option value="rechazado" ${l[f]==='rechazado'?'selected':''}>Nulo</option>
-                            </select>
-                        </td>
-                    `).join('')}
-                    <td class="p-4"><input type="text" onblur="window.updateField('${l.id}', 'notes', this.value)" value="${l.notes || ''}" class="bg-transparent text-[10px] w-full outline-none border-b border-gray-800 focus:border-cyan-500"></td>
-                    <td class="p-4 text-right"><button onclick="window.deleteLead('${l.id}')" class="text-gray-700 hover:text-red-500">×</button></td>
-                </tr>
-            `).join('');
-        }
-
-        document.getElementById('search-input').oninput = (e) => { searchTerm = e.target.value; render(); };
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.innerText = m; t.classList.remove('translate-y-20');
-            setTimeout(() => t.classList.add('translate-y-20'), 3000);
-        }
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
-        initAuth();
     </script>
 </body>
+</html>
